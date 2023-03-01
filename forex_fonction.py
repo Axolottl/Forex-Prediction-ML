@@ -151,3 +151,47 @@ class forex:
 
         return model.predict(X_test_scaled)
 
+    def simulate_forecasting(self, currency1, currency2, start_date, end_date, model, num_months):
+        # Get historical data
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        start_date = end_date - datetime.timedelta(days=num_months * 30)
+        data = self.get_forex_data(currency1, currency2, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+
+        # Generate features
+        features = self.get_features(currency1, currency2, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+
+        # Scale features
+        if self._scaler == 0:
+            self._scaler = StandardScaler()
+            self._scaler.fit(features)
+        features = self._scaler.transform(features)
+
+        # Split data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(features, data["close"].values[num_months:], test_size=0.2, shuffle=False)
+
+        # Train model
+        model.fit(X_train, y_train)
+
+        # Predict next month's closing price
+        last_month_features = self.get_features(currency1, currency2, (end_date - datetime.timedelta(days=30)).strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
+        last_month_features = self._scaler.transform(last_month_features)
+        next_month_prediction = model.predict(last_month_features)[0]
+
+        # Collect predicted and actual values for the last num_months
+        predicted_values = []
+        actual_values = []
+        for i in range(1, num_months + 1):
+            # Get features for current month
+            features = self.get_features(currency1, currency2, (end_date - datetime.timedelta(days=30i+1)).strftime("%Y-%m-%d"), (end_date - datetime.timedelta(days=30i)).strftime("%Y-%m-%d"))
+            features = self._scaler.transform(features)
+            # Predict closing price for current month
+            prediction = model.predict(features)[0]
+            predicted_values.append(prediction)
+
+            # Get actual closing price for current month
+            actual = data["close"].values[-i]
+            actual_values.append(actual)
+
+        predicted_values.reverse()
+        actual_values.reverse()
+        return (predicted_values, actual_values)
