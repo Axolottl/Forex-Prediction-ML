@@ -182,7 +182,7 @@ class forex:
         actual_values = []
         for i in range(1, num_months + 1):
             # Get features for current month
-            features = self.get_features(currency1, currency2, (end_date - datetime.timedelta(days=30i+1)).strftime("%Y-%m-%d"), (end_date - datetime.timedelta(days=30i)).strftime("%Y-%m-%d"))
+            features = self.get_features(currency1, currency2, (end_date - datetime.timedelta(days=30*(i+1))).strftime("%Y-%m-%d"), (end_date - datetime.timedelta(days=30*i)).strftime("%Y-%m-%d"))
             features = self._scaler.transform(features)
             # Predict closing price for current month
             prediction = model.predict(features)[0]
